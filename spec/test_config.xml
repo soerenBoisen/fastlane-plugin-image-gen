@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="menu.gopay.pos" version="1.4.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:tools="http://schemas.android.com/tools">
+    <name>GoPay POS</name>
+    <description>GoPay POS terminal app by FacilityNet</description>
+    <author email="support@facilitynet.dk" href="https://facilitynet.io">
+        Facilitynet Team
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <platform name="android">
+        <preference name="Fullscreen" value="true" />
+        <preference name="GradlePluginKotlinEnabled" value="true" />
+        <preference name="GradlePluginKotlinCodeStyle" value="official" />
+        <preference name="AndroidXEnabled" value="true" />
+        <preference name="android-minSdkVersion" value="26" />
+        <preference name="android-targetSdkVersion" value="33" />
+        <preference name="android-compileSdkVersion" value="33" />
+        <preference name="orientation" value="landscape" />
+        <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest">
+            <manifest xmlns:tools="http://schemas.android.com/tools" />
+        </edit-config>
+        <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
+            <application android:allowBackup="false" android:supportsRtl="false" tools:replace="android:allowBackup" />
+        </edit-config>
+
+        <icon density="mdpi" src="assets/dist/android/mdpi/ic_gopay_icon.png" />
+        <icon density="hdpi" src="assets/dist/android/hdpi/ic_gopay_icon.png" />
+        <icon density="xhdpi" src="assets/dist/android/xhdpi/ic_gopay_icon.png" />
+        <icon density="xxhdpi" src="assets/dist/android/xxhdpi/ic_gopay_icon.png" />
+        <icon density="xxxhdpi" src="assets/dist/android/xxxhdpi/ic_gopay_icon.png" />
+    </platform>
+</widget>
