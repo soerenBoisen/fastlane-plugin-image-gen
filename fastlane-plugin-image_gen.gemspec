@@ -10,6 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Generate images for iOS and Android from a master SVG'
   # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-image_gen"
+  spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
   spec.require_paths = ['lib']
