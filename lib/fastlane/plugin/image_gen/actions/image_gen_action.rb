@@ -51,6 +51,7 @@ module Fastlane
 
       def self.ensure_target_dir(params)
         target_dir = File.expand_path(params[:target_dir])
+        UI.message("Ensuring target folders: #{target_dir}")
         Helper::ImageGenHelper.ensure_dirs(target_dir)
         return target_dir
       end
@@ -61,7 +62,7 @@ module Fastlane
         icon_config = { adaptive: false }
 
         icon_spec.each do |type, type_options|
-          UI.message("Generating icons for: #{type}")
+          UI.message("Generating icons for: #{type} [hash: #{type_options.kind_of?(Hash)}, array: #{type_options.kind_of?(Array)}]")
           if type_options.kind_of?(Hash)
             icon_config = type_options[:config]
             icons = type_options[:icons]
