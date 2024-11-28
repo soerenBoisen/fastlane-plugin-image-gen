@@ -114,7 +114,7 @@ module Fastlane
         if old_icon_nodes.nil?
           append_nodes(android_section, new_nodes)
         else
-          replace_nodes(android_section, old_icon_nodes, new_icon_nodes)
+          replace_nodes(old_icon_nodes, new_icon_nodes)
         end
 
         write_xml_file("./config.xml", xml_doc)
