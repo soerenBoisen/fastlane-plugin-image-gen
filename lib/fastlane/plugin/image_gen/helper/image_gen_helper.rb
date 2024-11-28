@@ -67,6 +67,10 @@ module Fastlane
         File.write(path, xml_doc.to_xml)
       end
 
+      def self.find_android_section(xml_doc)
+        return xml_doc.xpath("/w:widget/w:platform[@name='android']", { "w" => "http://www.w3.org/ns/widgets" })
+      end
+
       def self.find_android_icons(xml_doc)
         return xml_doc.xpath("/w:widget/w:platform[@name='android']/w:icon", { "w" => "http://www.w3.org/ns/widgets" })
       end
@@ -84,6 +88,12 @@ module Fastlane
         end
       end
 
+      def self.append_nodes(android_section, new_nodes)
+        new_nodes.each do |node|
+          android_section.add_child(node)
+        end
+      end
+
       def self.replace_nodes(old_nodes, new_nodes)
         first_old = old_nodes[0]
 
@@ -96,11 +106,17 @@ module Fastlane
 
       def self.cordova_insert_android_icons(icon_paths, icon_config)
         xml_doc = load_xml_file("./config.xml")
+        android_section = find_android_section(xml_doc)
         old_icon_nodes = find_android_icons(xml_doc)
 
         new_icon_nodes = icon_paths.map { |path| create_android_icon_node(xml_doc, path, icon_config) }
 
-        replace_nodes(old_icon_nodes, new_icon_nodes)
+        if old_icon_nodes.nil?
+          append_nodes(android_section, new_nodes)
+        else
+          replace_nodes(android_section, old_icon_nodes, new_icon_nodes)
+        end
+
         write_xml_file("./config.xml", xml_doc)
       end
     end
