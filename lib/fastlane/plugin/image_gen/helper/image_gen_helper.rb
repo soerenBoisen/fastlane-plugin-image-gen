@@ -112,7 +112,7 @@ module Fastlane
         new_icon_nodes = icon_paths.map { |path| create_android_icon_node(xml_doc, path, icon_config) }
 
         if old_icon_nodes.nil? || old_icon_nodes.empty?
-          append_nodes(android_section, new_nodes)
+          append_nodes(android_section, new_icon_nodes)
         else
           replace_nodes(old_icon_nodes, new_icon_nodes)
         end
