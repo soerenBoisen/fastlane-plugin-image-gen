@@ -58,9 +58,17 @@ module Fastlane
       def self.generate_icons(inkscape_cmd, icon_spec, source_image, target_dir)
         platform = platform_name
         icon_paths = []
+        icon_config = { adaptive: false }
 
-        icon_spec.each do |type, icons|
+        icon_spec.each do |type, type_options|
           UI.message("Generating icons for: #{type}")
+          if type_options.kind_of?(Hash)
+            icon_config = type_options.config
+            icons = type_options.icons
+          else
+            icons = type_options
+          end
+
           icons.each do |icon|
             filename = icon["filename"]
             width = icon["width"]
@@ -78,7 +86,7 @@ module Fastlane
 
         case platform
         when :android
-          Helper::ImageGenHelper.cordova_insert_android_icons(icon_paths)
+          Helper::ImageGenHelper.cordova_insert_android_icons(icon_paths, icon_config)
         when :ios
         else
           UI.user_error!("Unknown platform: #{platform}")

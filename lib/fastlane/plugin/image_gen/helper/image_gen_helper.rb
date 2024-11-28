@@ -71,9 +71,17 @@ module Fastlane
         return xml_doc.xpath("/w:widget/w:platform[@name='android']/w:icon", { "w" => "http://www.w3.org/ns/widgets" })
       end
 
-      def self.create_android_icon_node(xml_doc, icon_path)
+      def self.find_android_colors_xml(xml_doc)
+        return xml_doc.xpath("/w:widget/w:platform[@name='android']/w:resource-file[@target~'colors.xml']", { w: "http://www.w3.org/ns/widgets" })
+      end
+
+      def self.create_android_icon_node(xml_doc, icon_path, icon_config)
         density = Pathname.new(icon_path).parent.basename
-        xml_doc.create_element('icon', { "density" => density, "src" => icon_path })
+        if icon_config.adaptive
+          xml_doc.create_element('icon', { "density" => density, "foreground" => icon_path, "monochrome" => icon_path, "background" => "@color/ic_launcher_icon_background" })
+        else
+          xml_doc.create_element('icon', { "density" => density, "src" => icon_path })
+        end
       end
 
       def self.replace_nodes(old_nodes, new_nodes)
@@ -86,11 +94,11 @@ module Fastlane
         old_nodes.unlink
       end
 
-      def self.cordova_insert_android_icons(icon_paths)
+      def self.cordova_insert_android_icons(icon_paths, icon_config)
         xml_doc = load_xml_file("./config.xml")
         old_icon_nodes = find_android_icons(xml_doc)
 
-        new_icon_nodes = icon_paths.map { |path| create_android_icon_node(xml_doc, path) }
+        new_icon_nodes = icon_paths.map { |path| create_android_icon_node(xml_doc, path, icon_config) }
 
         replace_nodes(old_icon_nodes, new_icon_nodes)
         write_xml_file("./config.xml", xml_doc)
