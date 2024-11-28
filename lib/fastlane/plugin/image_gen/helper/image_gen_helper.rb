@@ -69,6 +69,7 @@ module Fastlane
 
       def self.find_android_section(xml_doc)
         return xml_doc.xpath("/w:widget/w:platform[@name='android']", { "w" => "http://www.w3.org/ns/widgets" })
+                      .first
       end
 
       def self.find_android_icons(xml_doc)
