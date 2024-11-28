@@ -63,16 +63,16 @@ module Fastlane
         icon_spec.each do |type, type_options|
           UI.message("Generating icons for: #{type}")
           if type_options.kind_of?(Hash)
-            icon_config = type_options.config
-            icons = type_options.icons
+            icon_config = type_options[:config]
+            icons = type_options[:icons]
           else
             icons = type_options
           end
 
           icons.each do |icon|
-            filename = icon["filename"]
-            width = icon["width"]
-            height = icon["height"]
+            filename = icon[:filename]
+            width = icon[:width]
+            height = icon[:height]
 
             target_path = File.expand_path(filename, target_dir)
             Helper::ImageGenHelper.ensure_dirs(target_path)
