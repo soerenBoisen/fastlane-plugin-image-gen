@@ -77,7 +77,7 @@ module Fastlane
       end
 
       def self.find_android_splash_prefs(xml_doc)
-        return xml_doc.xpath("/w:widget/w:platform[@name='android']/w:preference[@name='AndroidWindowSplashScreenAnimatedIcon' or @name='AndroidWindowSplashScreenBackground']", { "w" => "http://www.w3.org/ns/widgets" })
+        return xml_doc.xpath("/w:widget/w:platform[@name='android']/w:preference[@name='AndroidWindowSplashScreenAnimatedIcon' or @name='AndroidWindowSplashScreenIconBackgroundColor' or @name='AndroidWindowSplashScreenBackground']", { "w" => "http://www.w3.org/ns/widgets" })
       end
 
       def self.find_android_colors_xml(xml_doc)
@@ -94,10 +94,15 @@ module Fastlane
       end
 
       def self.create_android_splash_pref_nodes(xml_doc, icon_path, icon_config)
-        icon_pref = xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenAnimatedIcon", "value" => icon_path })
-        bg_pref = xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenBackground", "value" => icon_config[:bgColor] })
+        prefs = []
+        prefs << xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenAnimatedIcon", "value" => icon_path })
+        prefs << xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenBackground", "value" => icon_config[:bgColor] })
 
-        return icon_pref, bg_pref
+        if icon_config[:iconBgColor]
+          prefs << xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenIconBackgroundColor", "value" => icon_config[:iconBgColor] })
+        end
+
+        return prefs
       end
 
       def self.append_nodes(android_section, new_nodes)
