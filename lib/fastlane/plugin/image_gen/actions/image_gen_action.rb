@@ -58,15 +58,15 @@ module Fastlane
 
       def self.generate_icons(inkscape_cmd, icon_spec, source_image, target_dir)
         platform = platform_name
-        icon_paths = []
-        icon_config = { adaptive: false }
 
         icon_spec.each do |type, type_options|
           UI.message("Generating icons for: #{type} [hash: #{type_options.kind_of?(Hash)}, array: #{type_options.kind_of?(Array)}]")
+          icon_paths = []
           if type_options.kind_of?(Hash)
             icon_config = type_options["config"].transform_keys(&:to_sym)
             icons = type_options["icons"]
           else
+            icon_config = { adaptive: false, splash: false }
             icons = type_options
           end
 
@@ -79,18 +79,20 @@ module Fastlane
             Helper::ImageGenHelper.ensure_dirs(target_path)
 
             relative_path = Helper::ImageGenHelper.relativize_to_basedir(target_path)
-            icon_paths << relative_path if type != "play-store"
+            icon_paths << relative_path
 
             generate_image(inkscape_cmd, source_image, target_path, width, height) unless File.exist?(target_path)
           end
-        end
 
-        case platform
-        when :android
-          Helper::ImageGenHelper.cordova_insert_android_icons(icon_paths, icon_config)
-        when :ios
-        else
-          UI.user_error!("Unknown platform: #{platform}")
+          case platform
+          when :android
+            if type != "play-store"
+              Helper::ImageGenHelper.cordova_insert_android_icons(icon_paths, icon_config)
+            end
+          when :ios
+          else
+            UI.user_error!("Platform not supported: #{platform}")
+          end
         end
       end
 
