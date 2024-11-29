@@ -87,7 +87,7 @@ module Fastlane
       def self.create_android_icon_node(xml_doc, icon_path, icon_config)
         density = Pathname.new(icon_path).parent.basename
         if icon_config[:adaptive]
-          xml_doc.create_element('icon', { "density" => density, "foreground" => icon_path, "monochrome" => icon_path, "background" => "@color/ic_launcher_icon_background" })
+          xml_doc.create_element('icon', { "density" => density, "foreground" => icon_path, "monochrome" => icon_path, "background" => "@color/ic_gopay_icon_background" })
         else
           xml_doc.create_element('icon', { "density" => density, "src" => icon_path })
         end
