@@ -84,18 +84,18 @@ module Fastlane
         return xml_doc.xpath("/w:widget/w:platform[@name='android']/w:resource-file[@target~'colors.xml']", { w: "http://www.w3.org/ns/widgets" })
       end
 
-      def self.create_android_icon_node(xml_doc, icon_path, icon_config)
-        density = Pathname.new(icon_path).parent.basename
+      def self.create_android_icon_node(xml_doc, icon_config)
+        density = Pathname.new(icon_config[:path]).parent.basename
         if icon_config[:adaptive]
-          xml_doc.create_element('icon', { "density" => density, "foreground" => icon_path, "monochrome" => icon_path, "background" => "@color/ic_gopay_icon_background" })
+          xml_doc.create_element('icon', { "density" => density, "foreground" => icon_config[:path], "monochrome" => icon_config[:path], "background" => "@color/ic_gopay_icon_background" })
         else
-          xml_doc.create_element('icon', { "density" => density, "src" => icon_path })
+          xml_doc.create_element('icon', { "density" => density, "src" => icon_config[:path] })
         end
       end
 
-      def self.create_android_splash_pref_nodes(xml_doc, icon_path, icon_config)
+      def self.create_android_splash_pref_nodes(xml_doc, icon_config)
         prefs = []
-        prefs << xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenAnimatedIcon", "value" => icon_path })
+        prefs << xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenAnimatedIcon", "value" => icon_config[:path] })
         prefs << xml_doc.create_element("preference", { "name" => "AndroidWindowSplashScreenBackground", "value" => icon_config[:bgColor] })
 
         if icon_config[:iconBgColor]
@@ -103,6 +103,19 @@ module Fastlane
         end
 
         return prefs
+      end
+
+      def self.find_ios_section(xml_doc)
+        return xml_doc.xpath("/w:widget/w:platform[@name='ios']", { "w" => "http://www.w3.org/ns/widgets" })
+                      .first
+      end
+
+      def self.find_ios_icons(xml_doc)
+        return xml_doc.xpath("/w:widget/w:platform[@name='ios']/w:icon", { "w" => "http://www.w3.org/ns/widgets" })
+      end
+
+      def self.create_ios_icon_node(xml_doc, icon_config)
+        xml_doc.create_element('icon', { "src" => icon_config[:path], "width" => icon_config[:width], "height" => icon_config[:height] })
       end
 
       def self.append_nodes(android_section, new_nodes)
@@ -121,14 +134,14 @@ module Fastlane
         old_nodes.unlink
       end
 
-      def self.cordova_insert_android_icons(icon_paths, icon_config)
+      def self.cordova_insert_android_icons(icon_configs)
         xml_doc = load_xml_file("./config.xml")
         android_section = find_android_section(xml_doc)
         old_icon_nodes = find_android_icons(xml_doc)
         old_pref_nodes = find_android_splash_prefs(xml_doc)
 
-        if icon_config[:splash]
-          new_pref_nodes = create_android_splash_pref_nodes(xml_doc, icon_paths.first, icon_config)
+        if !icon_configs.empty? && icon_configs.first[:splash]
+          new_pref_nodes = create_android_splash_pref_nodes(xml_doc, icon_configs.first)
 
           if old_pref_nodes.nil? || old_pref_nodes.empty?
             append_nodes(android_section, new_pref_nodes)
@@ -136,13 +149,29 @@ module Fastlane
             replace_nodes(old_pref_nodes, new_pref_nodes)
           end
         else
-          new_icon_nodes = icon_paths.map { |path| create_android_icon_node(xml_doc, path, icon_config) }
+          new_icon_nodes = icon_configs.map { |icon_config| create_android_icon_node(xml_doc, icon_config) }
 
           if old_icon_nodes.nil? || old_icon_nodes.empty?
             append_nodes(android_section, new_icon_nodes)
           else
             replace_nodes(old_icon_nodes, new_icon_nodes)
           end
+        end
+
+        write_xml_file("./config.xml", xml_doc)
+      end
+
+      def self.cordova_insert_ios_icons(icon_configs)
+        xml_doc = load_xml_file("./config.xml")
+        ios_section = find_ios_section(xml_doc)
+        old_icon_nodes = find_ios_icons(xml_doc)
+
+        new_icon_nodes = icon_configs.map { |icon_config| create_ios_icon_node(xml_doc, icon_config) }
+
+        if old_icon_nodes.nil? || old_icon_nodes.empty?
+          append_nodes(ios_section, new_icon_nodes)
+        else
+          replace_nodes(old_icon_nodes, new_icon_nodes)
         end
 
         write_xml_file("./config.xml", xml_doc)

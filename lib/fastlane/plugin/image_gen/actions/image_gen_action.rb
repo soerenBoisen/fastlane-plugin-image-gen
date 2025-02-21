@@ -61,7 +61,7 @@ module Fastlane
 
         icon_spec.each do |type, type_options|
           UI.message("Generating icons for: #{type} [hash: #{type_options.kind_of?(Hash)}, array: #{type_options.kind_of?(Array)}]")
-          icon_paths = []
+          icon_configs = []
           if type_options.kind_of?(Hash)
             icon_config = type_options["config"].transform_keys(&:to_sym)
             icons = type_options["icons"]
@@ -79,7 +79,9 @@ module Fastlane
             Helper::ImageGenHelper.ensure_dirs(target_path)
 
             relative_path = Helper::ImageGenHelper.relativize_to_basedir(target_path)
-            icon_paths << relative_path
+
+            cfg = icon_config.merge({ path: relative_path, width: width, height: height })
+            icon_configs << cfg
 
             generate_image(inkscape_cmd, source_image, target_path, width, height) unless File.exist?(target_path)
           end
@@ -87,9 +89,12 @@ module Fastlane
           case platform
           when :android
             if type != "play-store"
-              Helper::ImageGenHelper.cordova_insert_android_icons(icon_paths, icon_config)
+              Helper::ImageGenHelper.cordova_insert_android_icons(icon_configs)
             end
           when :ios
+            if ["universal", "universal-legacy", "universal-notifications", "apple-watch"].include?(type)
+                Helper::ImageGenHelper.cordova_insert_ios_icons(icon_configs)
+            end
           else
             UI.user_error!("Platform not supported: #{platform}")
           end
