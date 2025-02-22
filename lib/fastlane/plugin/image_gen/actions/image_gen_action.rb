@@ -57,11 +57,17 @@ module Fastlane
       end
 
       def self.generate_icons(inkscape_cmd, icon_spec, source_image, target_dir)
+        app_icon_types = ["launcher", "universal", "universal-legacy", "universal-notifications", "apple-watch"]
+        splash_icon_types = ["splash-screen"]
+
         platform = platform_name
+        icons_to_insert = []
+        splash_to_insert = []
 
         icon_spec.each do |type, type_options|
           UI.message("Generating icons for: #{type} [hash: #{type_options.kind_of?(Hash)}, array: #{type_options.kind_of?(Array)}]")
           icon_configs = []
+
           if type_options.kind_of?(Hash)
             icon_config = type_options["config"].transform_keys(&:to_sym)
             icons = type_options["icons"]
@@ -86,18 +92,20 @@ module Fastlane
             generate_image(inkscape_cmd, source_image, target_path, width, height) unless File.exist?(target_path)
           end
 
-          case platform
-          when :android
-            if type != "play-store"
-              Helper::ImageGenHelper.cordova_insert_android_icons(icon_configs)
-            end
-          when :ios
-            if ["universal", "universal-legacy", "universal-notifications", "apple-watch"].include?(type)
-                Helper::ImageGenHelper.cordova_insert_ios_icons(icon_configs)
-            end
-          else
-            UI.user_error!("Platform not supported: #{platform}")
+          if app_icon_types.include?(type)
+            icons_to_insert += icon_configs
+          elsif splash_icon_types.include?(type)
+            splash_to_insert += icon_configs
           end
+        end
+
+        case platform
+        when :android
+          Helper::ImageGenHelper.cordova_insert_android_icons(icons_to_insert, splash_to_insert)
+        when :ios
+          Helper::ImageGenHelper.cordova_insert_ios_icons(icons_to_insert)
+        else
+          UI.user_error!("Platform not supported: #{platform}")
         end
       end
 

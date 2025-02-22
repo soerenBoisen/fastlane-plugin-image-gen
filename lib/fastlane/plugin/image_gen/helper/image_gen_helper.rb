@@ -134,27 +134,25 @@ module Fastlane
         old_nodes.unlink
       end
 
-      def self.cordova_insert_android_icons(icon_configs)
+      def self.cordova_insert_android_icons(icons, splash)
         xml_doc = load_xml_file("./config.xml")
         android_section = find_android_section(xml_doc)
         old_icon_nodes = find_android_icons(xml_doc)
         old_pref_nodes = find_android_splash_prefs(xml_doc)
 
-        if !icon_configs.empty? && icon_configs.first[:splash]
-          new_pref_nodes = create_android_splash_pref_nodes(xml_doc, icon_configs.first)
+        new_icon_nodes = icons.map { |icon_config| create_android_icon_node(xml_doc, icon_config) }
+        if old_icon_nodes.nil? || old_icon_nodes.empty?
+          append_nodes(android_section, new_icon_nodes)
+        else
+          replace_nodes(old_icon_nodes, new_icon_nodes)
+        end
 
+        unless splash.empty?
+          new_pref_nodes = create_android_splash_pref_nodes(xml_doc, splash.first)
           if old_pref_nodes.nil? || old_pref_nodes.empty?
             append_nodes(android_section, new_pref_nodes)
           else
             replace_nodes(old_pref_nodes, new_pref_nodes)
-          end
-        else
-          new_icon_nodes = icon_configs.map { |icon_config| create_android_icon_node(xml_doc, icon_config) }
-
-          if old_icon_nodes.nil? || old_icon_nodes.empty?
-            append_nodes(android_section, new_icon_nodes)
-          else
-            replace_nodes(old_icon_nodes, new_icon_nodes)
           end
         end
 
