@@ -9,16 +9,23 @@ module Fastlane
       def self.run(params)
         UI.message("-== image_gen - Generate images for your app ==-")
 
+        platform = platform_name(params)
         inkscape_cmd = get_inkscape_cmd(params)
         icon_spec = load_json(params)
         source_image = locate_source_image(params)
         target_dir = ensure_target_dir(params)
 
-        generate_icons(inkscape_cmd, icon_spec, source_image, target_dir)
+        generate_icons(platform, inkscape_cmd, icon_spec, source_image, target_dir)
       end
 
-      def self.platform_name
-        return Actions.lane_context[SharedValues::PLATFORM_NAME]
+      def self.platform_name(params)
+        platform = params[:platform_name]
+
+        if platform.nil? || platform.empty?
+          return Actions.lane_context[SharedValues::PLATFORM_NAME]
+        end
+
+        return platform
       end
 
       def self.get_inkscape_cmd(params)
@@ -56,11 +63,10 @@ module Fastlane
         return target_dir
       end
 
-      def self.generate_icons(inkscape_cmd, icon_spec, source_image, target_dir)
+      def self.generate_icons(platform, inkscape_cmd, icon_spec, source_image, target_dir)
         app_icon_types = ["launcher", "universal", "universal-legacy", "universal-notifications", "apple-watch"]
         splash_icon_types = ["splash-screen"]
 
-        platform = platform_name
         icons_to_insert = []
         splash_to_insert = []
 
@@ -104,6 +110,8 @@ module Fastlane
           Helper::ImageGenHelper.cordova_insert_android_icons(icons_to_insert, splash_to_insert)
         when :ios
           Helper::ImageGenHelper.cordova_insert_ios_icons(icons_to_insert)
+        when :web
+          # TODO: Insert favicons in index.html
         else
           UI.user_error!("Platform not supported: #{platform}")
         end
@@ -134,6 +142,9 @@ module Fastlane
 
       def self.available_options
         [
+          FastlaneCore::ConfigItem.new(key: :platform,
+                                       env_name: "FL_IMAGE_GEN_PLATFORM",
+                                       description: "Platform override"),
           FastlaneCore::ConfigItem.new(key: :spec_file,
                                        env_name: "FL_IMAGE_GEN_SPEC_FILE",
                                        description: "Location of the JSON file for generating icons"),
