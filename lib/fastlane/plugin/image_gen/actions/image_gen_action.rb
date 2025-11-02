@@ -73,9 +73,12 @@ module Fastlane
         icon_spec.each do |type, type_options|
           UI.message("Generating icons for: #{type} [hash: #{type_options.kind_of?(Hash)}, array: #{type_options.kind_of?(Array)}]")
           icon_configs = []
+          export_bg_color = ""
 
           if type_options.kind_of?(Hash)
             icon_config = type_options["config"].transform_keys(&:to_sym)
+            export_bg_color = icon_config[:exportBgColor] || ""
+            icon_config.delete(:exportBgColor)
             icons = type_options["icons"]
           else
             icon_config = { adaptive: false, splash: false }
@@ -95,7 +98,7 @@ module Fastlane
             cfg = icon_config.merge({ path: relative_path, width: width, height: height })
             icon_configs << cfg
 
-            generate_image(inkscape_cmd, source_image, target_path, width, height) unless File.exist?(target_path)
+            generate_image(inkscape_cmd, source_image, target_path, width, height, export_bg_color) unless File.exist?(target_path)
           end
 
           if app_icon_types.include?(type)
@@ -117,8 +120,13 @@ module Fastlane
         end
       end
 
-      def self.generate_image(inkscape_cmd, source_image, target_path, width, height)
-        FastlaneCore::CommandExecutor.execute(command: "#{inkscape_cmd} #{source_image} --export-width \"#{width}\" --export-height \"#{height}\" --export-filename \"#{target_path}\"",
+      def self.generate_image(inkscape_cmd, source_image, target_path, width, height, bg_color)
+        cmd = "#{inkscape_cmd} #{source_image} --export-width=\"#{width}\" --export-height=\"#{height}\" --export-filename=\"#{target_path}\""
+        if bg_color.eql?("")
+          cmd = "#{cmd} --export-background=\"#{bg_color}\""
+        end
+
+        FastlaneCore::CommandExecutor.execute(command: cmd,
                                               print_all: true,
                                               print_command: true)
       end
