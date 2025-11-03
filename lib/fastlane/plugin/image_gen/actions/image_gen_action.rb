@@ -150,7 +150,7 @@ module Fastlane
 
       def self.available_options
         [
-          FastlaneCore::ConfigItem.new(key: :platform,
+          FastlaneCore::ConfigItem.new(key: :platform_name,
                                        env_name: "FL_IMAGE_GEN_PLATFORM",
                                        description: "Platform override"),
           FastlaneCore::ConfigItem.new(key: :spec_file,
