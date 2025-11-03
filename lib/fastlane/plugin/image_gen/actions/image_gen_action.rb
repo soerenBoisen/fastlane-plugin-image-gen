@@ -80,6 +80,7 @@ module Fastlane
             export_bg_color = icon_config[:exportBgColor] || ""
             icon_config.delete(:exportBgColor)
             icons = type_options["icons"]
+            UI.message("Export bg color: #{export_bg_color}")
           else
             icon_config = { adaptive: false, splash: false }
             icons = type_options
@@ -152,7 +153,8 @@ module Fastlane
         [
           FastlaneCore::ConfigItem.new(key: :platform_name,
                                        env_name: "FL_IMAGE_GEN_PLATFORM",
-                                       description: "Platform override"),
+                                       description: "Platform override",
+                                       default_value: ""),
           FastlaneCore::ConfigItem.new(key: :spec_file,
                                        env_name: "FL_IMAGE_GEN_SPEC_FILE",
                                        description: "Location of the JSON file for generating icons"),
