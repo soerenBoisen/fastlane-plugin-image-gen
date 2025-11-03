@@ -123,7 +123,7 @@ module Fastlane
 
       def self.generate_image(inkscape_cmd, source_image, target_path, width, height, bg_color)
         cmd = "#{inkscape_cmd} #{source_image} --export-width=\"#{width}\" --export-height=\"#{height}\" --export-filename=\"#{target_path}\""
-        if bg_color.eql?("")
+        unless bg_color.eql?("")
           cmd = "#{cmd} --export-background=\"#{bg_color}\""
         end
 
