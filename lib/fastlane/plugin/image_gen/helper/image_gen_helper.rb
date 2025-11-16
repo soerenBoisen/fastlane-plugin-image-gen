@@ -135,6 +135,10 @@ module Fastlane
       end
 
       def self.cordova_insert_android_icons(icons, splash)
+        if icons.empty?
+          return
+        end
+
         xml_doc = load_xml_file("./config.xml")
         android_section = find_android_section(xml_doc)
         old_icon_nodes = find_android_icons(xml_doc)
@@ -160,6 +164,10 @@ module Fastlane
       end
 
       def self.cordova_insert_ios_icons(icon_configs)
+        if icon_configs.empty?
+          return
+        end
+
         xml_doc = load_xml_file("./config.xml")
         ios_section = find_ios_section(xml_doc)
         old_icon_nodes = find_ios_icons(xml_doc)

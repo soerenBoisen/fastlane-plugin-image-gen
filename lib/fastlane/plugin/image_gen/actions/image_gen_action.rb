@@ -19,7 +19,7 @@ module Fastlane
       end
 
       def self.platform_name(params)
-        platform = params[:platform_name]
+        platform = params[:platform_name].to_sym
 
         if platform.nil? || platform.empty?
           return Actions.lane_context[SharedValues::PLATFORM_NAME]
@@ -29,7 +29,14 @@ module Fastlane
       end
 
       def self.get_inkscape_cmd(params)
-        return params[:inkscape_cmd]
+        case FastlaneCore::Helper.operating_system
+        when "macOS"
+          return params[:inkscape_cmd_macos]
+        when "linux"
+          return params[:inkscape_cmd_linux]
+        else
+          UI.user_error!("Operating system not supported: #{FastlaneCore::Helper.operating_system}")
+        end
       end
 
       def self.load_json(params)
@@ -122,6 +129,7 @@ module Fastlane
       end
 
       def self.generate_image(inkscape_cmd, source_image, target_path, width, height, bg_color)
+
         cmd = "#{inkscape_cmd} #{source_image} --export-width=\"#{width}\" --export-height=\"#{height}\" --export-filename=\"#{target_path}\""
         unless bg_color.eql?("")
           cmd = "#{cmd} --export-background=\"#{bg_color}\""
@@ -164,10 +172,14 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :target_dir,
                                        env_name: "FL_IMAGE_GEN_TARGET_DIR",
                                        description: "Location of the output folder to put generated icons"),
-          FastlaneCore::ConfigItem.new(key: :inkscape_cmd,
-                                       env_name: "FL_IMAGE_GEN_INKSCAPE_CMD",
-                                       description: "Command to run Inkscape",
-                                       default_value: "inkscape")
+          FastlaneCore::ConfigItem.new(key: :inkscape_cmd_linux,
+                                       env_name: "FL_IMAGE_GEN_INKSCAPE_CMD_LINUX",
+                                       description: "Command to run Inkscape on Linux",
+                                       default_value: "inkscape"),
+          FastlaneCore::ConfigItem.new(key: :inkscape_cmd_macos,
+                                       env_name: "FL_IMAGE_GEN_INKSCAPE_CMD_MACOS",
+                                       description: "Command to run Inkscape on macOS",
+                                       default_value: "/Applications/Inkscape.app/Contents/MacOS/inkscape")
         ]
       end
 

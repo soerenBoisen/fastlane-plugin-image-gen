@@ -8,6 +8,8 @@ module Fastlane
     class TestWorkdirAction < Action
       def self.run(params)
         UI.message("Current work dir: #{Dir.getwd}")
+        UI.message("Current OS: #{FastlaneCore::Helper.operating_system}")
+        UI.message("Is macOS: #{FastlaneCore::Helper.mac?}")
       end
 
       def self.description

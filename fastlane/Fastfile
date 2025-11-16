@@ -1,3 +1,11 @@
 lane :test do
-  image_gen
+  test_workdir()
+
+  image_gen(
+    platform_name: "ios",
+    spec_file: "test/src/logo-gen.json",
+    source_image: "test/src/logo.svg",
+    target_dir: "test/output",
+    inkscape_cmd_macos: "/Applications/Inkscape.app/Contents/MacOS/inkscape",
+  )
 end
