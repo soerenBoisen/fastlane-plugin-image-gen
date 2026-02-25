@@ -29,8 +29,8 @@ module Fastlane
       end
 
       def self.get_inkscape_cmd(params)
-        case FastlaneCore::Helper.operating_system
-        when "macOS"
+        case FastlaneCore::Helper.operating_system.downcase
+        when "macos"
           return params[:inkscape_cmd_macos]
         when "linux"
           return params[:inkscape_cmd_linux]
@@ -129,7 +129,6 @@ module Fastlane
       end
 
       def self.generate_image(inkscape_cmd, source_image, target_path, width, height, bg_color)
-
         cmd = "#{inkscape_cmd} #{source_image} --export-width=\"#{width}\" --export-height=\"#{height}\" --export-filename=\"#{target_path}\""
         unless bg_color.eql?("")
           cmd = "#{cmd} --export-background=\"#{bg_color}\""
