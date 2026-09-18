@@ -134,51 +134,41 @@ module Fastlane
         old_nodes.unlink
       end
 
-      def self.cordova_insert_android_icons(icons, splash)
-        if icons.empty?
-          return
+      def self.upsert_nodes(section, old_nodes, new_nodes)
+        if old_nodes.nil? || old_nodes.empty?
+          append_nodes(section, new_nodes)
+        else
+          replace_nodes(old_nodes, new_nodes)
         end
+      end
+
+      def self.insert_android_splash_prefs(xml_doc, android_section, splash)
+        new_pref_nodes = create_android_splash_pref_nodes(xml_doc, splash.first)
+        upsert_nodes(android_section, find_android_splash_prefs(xml_doc), new_pref_nodes)
+      end
+
+      def self.cordova_insert_android_icons(icons, splash)
+        return if icons.empty?
 
         xml_doc = load_xml_file("./config.xml")
         android_section = find_android_section(xml_doc)
-        old_icon_nodes = find_android_icons(xml_doc)
-        old_pref_nodes = find_android_splash_prefs(xml_doc)
 
         new_icon_nodes = icons.map { |icon_config| create_android_icon_node(xml_doc, icon_config) }
-        if old_icon_nodes.nil? || old_icon_nodes.empty?
-          append_nodes(android_section, new_icon_nodes)
-        else
-          replace_nodes(old_icon_nodes, new_icon_nodes)
-        end
+        upsert_nodes(android_section, find_android_icons(xml_doc), new_icon_nodes)
 
-        unless splash.empty?
-          new_pref_nodes = create_android_splash_pref_nodes(xml_doc, splash.first)
-          if old_pref_nodes.nil? || old_pref_nodes.empty?
-            append_nodes(android_section, new_pref_nodes)
-          else
-            replace_nodes(old_pref_nodes, new_pref_nodes)
-          end
-        end
+        insert_android_splash_prefs(xml_doc, android_section, splash) unless splash.empty?
 
         write_xml_file("./config.xml", xml_doc)
       end
 
       def self.cordova_insert_ios_icons(icon_configs)
-        if icon_configs.empty?
-          return
-        end
+        return if icon_configs.empty?
 
         xml_doc = load_xml_file("./config.xml")
         ios_section = find_ios_section(xml_doc)
-        old_icon_nodes = find_ios_icons(xml_doc)
 
         new_icon_nodes = icon_configs.map { |icon_config| create_ios_icon_node(xml_doc, icon_config) }
-
-        if old_icon_nodes.nil? || old_icon_nodes.empty?
-          append_nodes(ios_section, new_icon_nodes)
-        else
-          replace_nodes(old_icon_nodes, new_icon_nodes)
-        end
+        upsert_nodes(ios_section, find_ios_icons(xml_doc), new_icon_nodes)
 
         write_xml_file("./config.xml", xml_doc)
       end

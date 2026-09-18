@@ -37,12 +37,12 @@ describe Fastlane::Helper::ImageGenHelper do
   describe '#remove_dir' do
     it 'errors for a path outside base dir' do
       Dir.chdir("..") do
-        Dir.mkdir("_test_remove_dir") unless File.exist?("_test_remove_dir")
+        FileUtils.mkdir_p("_test_remove_dir")
       end
       expect { Fastlane::Helper::ImageGenHelper.remove_dir("../_test_remove_dir") }.to raise_error(/Refusing/)
     end
     it 'removes empty directory' do
-      Dir.mkdir("_test_remove_dir") unless File.exist?("_test_remove_dir")
+      FileUtils.mkdir_p("_test_remove_dir")
       Fastlane::Helper::ImageGenHelper.remove_dir("_test_remove_dir")
       expect(File.exist?("_test_remove_dir")).to be false
     end

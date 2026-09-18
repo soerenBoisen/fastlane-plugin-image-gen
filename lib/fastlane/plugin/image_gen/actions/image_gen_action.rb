@@ -10,16 +10,17 @@ module Fastlane
         UI.message("-== image_gen - Generate images for your app ==-")
 
         platform = platform_name(params)
-        inkscape_cmd = get_inkscape_cmd(params)
+        converter = params[:converter_tool]
+        converter_cmd = get_converter_cmd(params)
         icon_spec = load_json(params)
         source_image = locate_source_image(params)
         target_dir = ensure_target_dir(params)
 
-        generate_icons(platform, inkscape_cmd, icon_spec, source_image, target_dir)
+        generate_icons(platform, converter, converter_cmd, icon_spec, source_image, target_dir)
       end
 
       def self.platform_name(params)
-        platform = params[:platform_name].to_sym
+        platform = (params[:platform_name] || "").to_sym
 
         if platform.nil? || platform.empty?
           return Actions.lane_context[SharedValues::PLATFORM_NAME]
@@ -28,12 +29,14 @@ module Fastlane
         return platform
       end
 
-      def self.get_inkscape_cmd(params)
+      def self.get_converter_cmd(params)
+        rsvg = params[:converter_tool].eql?("rsvg-convert")
+
         case FastlaneCore::Helper.operating_system.downcase
         when "macos"
-          return params[:inkscape_cmd_macos]
+          return rsvg ? params[:rsvg_cmd_macos] : params[:inkscape_cmd_macos]
         when "linux"
-          return params[:inkscape_cmd_linux]
+          return rsvg ? params[:rsvg_cmd_linux] : params[:inkscape_cmd_linux]
         else
           UI.user_error!("Operating system not supported: #{FastlaneCore::Helper.operating_system}")
         end
@@ -70,52 +73,57 @@ module Fastlane
         return target_dir
       end
 
-      def self.generate_icons(platform, inkscape_cmd, icon_spec, source_image, target_dir)
-        app_icon_types = ["launcher", "universal", "universal-legacy", "universal-notifications", "apple-watch"]
-        splash_icon_types = ["splash-screen"]
+      APP_ICON_TYPES = ["launcher", "universal", "universal-legacy", "universal-notifications", "apple-watch"].freeze
+      SPLASH_ICON_TYPES = ["splash-screen"].freeze
 
+      def self.generate_icons(platform, converter, converter_cmd, icon_spec, source_image, target_dir)
         icons_to_insert = []
         splash_to_insert = []
 
         icon_spec.each do |type, type_options|
           UI.message("Generating icons for: #{type} [hash: #{type_options.kind_of?(Hash)}, array: #{type_options.kind_of?(Array)}]")
-          icon_configs = []
-          export_bg_color = ""
+          icon_config, icons, export_bg_color = icon_group_config(type_options)
 
-          if type_options.kind_of?(Hash)
-            icon_config = type_options["config"].transform_keys(&:to_sym)
-            export_bg_color = icon_config[:exportBgColor] || ""
-            icon_config.delete(:exportBgColor)
-            icons = type_options["icons"]
-            UI.message("Export bg color: #{export_bg_color}")
-          else
-            icon_config = { adaptive: false, splash: false }
-            icons = type_options
+          icon_configs = icons.map do |icon|
+            generate_icon(converter, converter_cmd, source_image, target_dir, icon_config, export_bg_color, icon)
           end
 
-          icons.each do |icon|
-            filename = icon["filename"]
-            width = icon["width"]
-            height = icon["height"]
-
-            target_path = File.expand_path(filename, target_dir)
-            Helper::ImageGenHelper.ensure_dirs(target_path)
-
-            relative_path = Helper::ImageGenHelper.relativize_to_basedir(target_path)
-
-            cfg = icon_config.merge({ path: relative_path, width: width, height: height })
-            icon_configs << cfg
-
-            generate_image(inkscape_cmd, source_image, target_path, width, height, export_bg_color) unless File.exist?(target_path)
-          end
-
-          if app_icon_types.include?(type)
-            icons_to_insert += icon_configs
-          elsif splash_icon_types.include?(type)
-            splash_to_insert += icon_configs
-          end
+          icons_to_insert += icon_configs if APP_ICON_TYPES.include?(type)
+          splash_to_insert += icon_configs if SPLASH_ICON_TYPES.include?(type)
         end
 
+        insert_generated_icons(platform, icons_to_insert, splash_to_insert)
+      end
+
+      def self.icon_group_config(type_options)
+        unless type_options.kind_of?(Hash)
+          return [{ adaptive: false, splash: false }, type_options, ""]
+        end
+
+        icon_config = type_options["config"].transform_keys(&:to_sym)
+        export_bg_color = icon_config[:exportBgColor] || ""
+        icon_config.delete(:exportBgColor)
+        UI.message("Export bg color: #{export_bg_color}")
+
+        [icon_config, type_options["icons"], export_bg_color]
+      end
+
+      def self.generate_icon(converter, converter_cmd, source_image, target_dir, icon_config, export_bg_color, icon)
+        filename = icon["filename"]
+        width = icon["width"]
+        height = icon["height"]
+
+        target_path = File.expand_path(filename, target_dir)
+        Helper::ImageGenHelper.ensure_dirs(target_path)
+
+        relative_path = Helper::ImageGenHelper.relativize_to_basedir(target_path)
+
+        generate_image(converter, converter_cmd, source_image, target_path, width, height, export_bg_color) unless File.exist?(target_path)
+
+        icon_config.merge({ path: relative_path, width:, height: })
+      end
+
+      def self.insert_generated_icons(platform, icons_to_insert, splash_to_insert)
         case platform
         when :android
           Helper::ImageGenHelper.cordova_insert_android_icons(icons_to_insert, splash_to_insert)
@@ -128,11 +136,23 @@ module Fastlane
         end
       end
 
-      def self.generate_image(inkscape_cmd, source_image, target_path, width, height, bg_color)
-        cmd = "#{inkscape_cmd} #{source_image} --export-width=\"#{width}\" --export-height=\"#{height}\" --export-filename=\"#{target_path}\""
-        unless bg_color.eql?("")
-          cmd = "#{cmd} --export-background=\"#{bg_color}\""
+      def self.build_convert_command(converter, converter_cmd, source_image, target_path, width, height, bg_color)
+        case converter
+        when "inkscape"
+          cmd = "#{converter_cmd} #{source_image} --export-width=\"#{width}\" --export-height=\"#{height}\" --export-filename=\"#{target_path}\""
+          cmd += " --export-background=\"#{bg_color}\"" unless bg_color.eql?("")
+        when "rsvg-convert"
+          cmd = "#{converter_cmd} #{source_image} --width=\"#{width}\" --height=\"#{height}\" --output=\"#{target_path}\""
+          cmd += " --background-color=\"#{bg_color}\"" unless bg_color.eql?("")
+        else
+          UI.user_error!("Unsupported converter tool: #{converter}")
         end
+
+        cmd
+      end
+
+      def self.generate_image(converter, converter_cmd, source_image, target_path, width, height, bg_color)
+        cmd = build_convert_command(converter, converter_cmd, source_image, target_path, width, height, bg_color)
 
         FastlaneCore::CommandExecutor.execute(command: cmd,
                                               print_all: true,
@@ -171,6 +191,15 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :target_dir,
                                        env_name: "FL_IMAGE_GEN_TARGET_DIR",
                                        description: "Location of the output folder to put generated icons"),
+          FastlaneCore::ConfigItem.new(key: :converter_tool,
+                                       env_name: "FL_IMAGE_GEN_CONVERTER_TOOL",
+                                       description: "SVG to raster converter tool to use, either 'inkscape' or 'rsvg-convert'",
+                                       default_value: "inkscape",
+                                       verify_block: proc do |value|
+                                         unless ["inkscape", "rsvg-convert"].include?(value)
+                                           UI.user_error!("Unsupported converter_tool '#{value}', must be one of: inkscape, rsvg-convert")
+                                         end
+                                       end),
           FastlaneCore::ConfigItem.new(key: :inkscape_cmd_linux,
                                        env_name: "FL_IMAGE_GEN_INKSCAPE_CMD_LINUX",
                                        description: "Command to run Inkscape on Linux",
@@ -178,7 +207,15 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :inkscape_cmd_macos,
                                        env_name: "FL_IMAGE_GEN_INKSCAPE_CMD_MACOS",
                                        description: "Command to run Inkscape on macOS",
-                                       default_value: "/Applications/Inkscape.app/Contents/MacOS/inkscape")
+                                       default_value: "/Applications/Inkscape.app/Contents/MacOS/inkscape"),
+          FastlaneCore::ConfigItem.new(key: :rsvg_cmd_linux,
+                                       env_name: "FL_IMAGE_GEN_RSVG_CMD_LINUX",
+                                       description: "Command to run rsvg-convert on Linux",
+                                       default_value: "rsvg-convert"),
+          FastlaneCore::ConfigItem.new(key: :rsvg_cmd_macos,
+                                       env_name: "FL_IMAGE_GEN_RSVG_CMD_MACOS",
+                                       description: "Command to run rsvg-convert on macOS",
+                                       default_value: "rsvg-convert")
         ]
       end
 

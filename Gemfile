@@ -13,7 +13,7 @@ gem 'rspec'
 # Formatter for RSpec to generate JUnit compatible reports.
 gem 'rspec_junit_formatter'
 # A Ruby static code analyzer and formatter.
-gem 'rubocop', '1.50.2'
+gem 'rubocop', '1.62.1'
 # A collection of RuboCop cops for performance optimizations.
 gem 'rubocop-performance'
 # A RuboCop extension focused on enforcing tools.
@@ -23,10 +23,10 @@ gem 'simplecov'
 
 # HACK: Needed until fastlane grows proper Ruby 3.4 support
 gem "abbrev"
-gem "mutex_m"
-gem "ostruct"
 gem "bigdecimal"
+gem "mutex_m"
 gem "nkf"
+gem "ostruct"
 
 gemspec
 
